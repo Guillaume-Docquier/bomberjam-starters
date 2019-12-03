@@ -2,43 +2,33 @@ const tf = require("@tensorflow/tfjs");
 require("@tensorflow/tfjs-node");
 
 const data = require("./src/data");
+const dataset = require("./src/dataset");
 const model = require("./src/model");
 
-const DATASET_SIZE = 1000;
-const GAMES_TO_LOAD = 150;
-const playerIds = ["p4"];
-
-// TODO Use tf.Sequential.fitDataset
-// https://js.tensorflow.org/api/latest/#tf.Sequential.fitDataset
 async function main() {
     const classifier = model.make();
+    const trainDataset = dataset.get();
+    
+    console.group("\nFitting model |", tf.memory().numTensors, "tensors");
     let accuracyMetricIndex = null;
-
-    let start = 0;
-    while (start < DATASET_SIZE - GAMES_TO_LOAD) {
-        const train = await data.get(start, GAMES_TO_LOAD, playerIds);
-        console.group("\nFitting model |", tf.memory().numTensors, "tensors");
-        const fitResult = await classifier.fit(train.inputs, train.outputs, {
-            batchSize: 64,
-            epochs: 10,
-            shuffle: true,
-            validationSplit: 0.15
-        });
-        train.inputs.dispose();
-        train.outputs.dispose();
-        
-        if (!accuracyMetricIndex) {
-            accuracyMetricIndex = fitResult.params.metrics.indexOf("acc");
+    const fitResult = await classifier.fitDataset(trainDataset, {
+        epochs: 10,
+        callbacks: {
+            onEpochEnd: async (epoch, log) => {
+                console.log(`Epoch ${epoch}, ${JSON.stringify(log)} | ${tf.memory().numTensors} tensors`);
+            },
         }
-
-        classifier.save("file://./bomberjam-cnn.tfm");
-        console.groupEnd();
-
-        start += GAMES_TO_LOAD;
+    });
+    
+    if (!accuracyMetricIndex) {
+        accuracyMetricIndex = fitResult.params.metrics.indexOf("acc");
     }
 
+    classifier.save("file://./bomberjam-cnn.tfm");
+    console.groupEnd();
+
     console.group("\nEvaluating model");
-    const test = await data.get(start, GAMES_TO_LOAD, playerIds);
+    const test = await data.get(2000, 25);
     const evalResult = classifier.evaluate(test.inputs, test.outputs, {
         batchSize: test.inputs.length
     });

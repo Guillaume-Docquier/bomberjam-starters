@@ -14,7 +14,7 @@ const NUMBER_OF_FEATURES = 10;
 const DATA_SHAPE = [NUMBER_OF_FEATURES, BOARD.width, BOARD.height]
 
 async function get(startIndex, gamesToLoad, playerIds = ["p1", "p2", "p3", "p4"]) {
-    console.group("\nParsing data");
+    console.group("Parsing data");
     const inputs = [];
     const outputs = [];
     const fileNames = fs.readdirSync(DATA_DIRECTORY);
