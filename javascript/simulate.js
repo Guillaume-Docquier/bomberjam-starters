@@ -1,5 +1,5 @@
 const { startSimulation } = require('bomberjam-backend');
-const { bot, RandomBot } = require("./bots");
+const { bot } = require("./bots");
 const { writeFileSync } = require("./src/file-operations");
 
 /*
